@@ -2,7 +2,8 @@
 
 A pre-visit symptom-and-history capture tool for limited-English-proficiency
 (LEP) dialysis/ESRD patients. Patients describe what's happening through a
-guided, scripted conversation in Spanish or English, and the app produces:
+guided, scripted conversation in Spanish, English, or Chinese, and the app
+produces:
 
 1. A structured account for the care team (English labels/categories, with
    the patient's own words preserved alongside — never paraphrased away).
@@ -36,11 +37,16 @@ npm run dev
 Log in as one of the seeded demo patients (or create a new profile) to try
 the flow. Demo patients: Maria Elena Torres (Spanish, hemodialysis, has a
 completed visit), James Whitfield (English, peritoneal dialysis, has a
-completed visit), Carlos Reyes (Spanish, no visits yet — good for demoing
-the intake flow from scratch).
+completed visit), Wei Lin Zhang (Chinese, hemodialysis, has a completed
+visit), Carlos Reyes (Spanish, no visits yet — good for demoing the intake
+flow from scratch).
 
 ## Known v1 limitations
 
+- **Chinese is Simplified only.** A real deployment for LA's dialysis
+  population would likely also need Traditional Chinese as a separate
+  variant — many Cantonese-speaking patients read Traditional, not just a
+  different font of the same text.
 - **No adaptive/LLM-powered questioning.** The conversation is a fixed,
   auditable decision tree (`src/conversation/flow.ts`), not an LLM — every
   question a patient can ever be asked is enumerated up front.

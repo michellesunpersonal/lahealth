@@ -16,7 +16,11 @@ function Quote({ field }: { field: FieldWithQuote | null }) {
       <div className="text-slate-800 text-sm">{field.structured}</div>
       <div className="mt-1 text-xs text-slate-400">
         {strings.summary.patientsOwnWords.en}
-        {field.quoteLanguage === "es" && <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">ES</span>}
+        {field.quoteLanguage !== "en" && (
+          <span className="ml-1 px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+            {field.quoteLanguage.toUpperCase()}
+          </span>
+        )}
         : <span className="italic">"{field.patientQuote}"</span>
       </div>
     </div>

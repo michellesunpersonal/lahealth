@@ -1,14 +1,15 @@
-import type { FieldWithQuote, PatientProfile, VisitEntry } from "../types/domain";
+import type { FieldWithQuote, LanguageCode, PatientProfile, VisitEntry } from "../types/domain";
 import { generatePatientRecap } from "../conversation/generateOutputs";
 import { newId } from "../lib/id";
 
 /**
- * Fictional demo data only — no real patient information. Seeds two
+ * Fictional demo data only — no real patient information. Seeds three
  * profiles with a completed visit each (so the two output views have
- * something to show immediately) and one brand-new profile with no visits
- * (so "start a new check-in" can be demoed from a clean slate).
+ * something to show immediately, in each supported language) and one
+ * brand-new profile with no visits (so "start a new check-in" can be
+ * demoed from a clean slate).
  */
-function f(structured: string, quoteLanguage: "en" | "es"): FieldWithQuote {
+function f(structured: string, quoteLanguage: LanguageCode): FieldWithQuote {
   return { structured, patientQuote: structured, quoteLanguage };
 }
 
@@ -22,6 +23,7 @@ export function buildSeedData(): { profiles: PatientProfile[]; visits: VisitEntr
   const mariaId = "seed-patient-maria";
   const jamesId = "seed-patient-james";
   const carlosId = "seed-patient-carlos";
+  const weiId = "seed-patient-wei";
 
   const maria: PatientProfile = {
     id: mariaId,
@@ -108,6 +110,36 @@ export function buildSeedData(): { profiles: PatientProfile[]; visits: VisitEntr
     currentMedications: [],
     relevantHistory: [],
     accessGrants: [],
+  };
+
+  const wei: PatientProfile = {
+    id: weiId,
+    preferredLanguage: "zh",
+    displayName: "Wei Lin Zhang",
+    dateOfBirth: "1971-09-08",
+    createdAt: daysAgoIso(150),
+    dialysis: {
+      modality: "hemodialysis",
+      scheduleDays: ["Tue", "Thu", "Sat"],
+      accessType: "fistula",
+      dryWeightLbs: 143,
+    },
+    currentMedications: [
+      { id: newId(), name: "Sevelamer", patientDescription: "吃饭时吃的大药片", reportedAt: daysAgoIso(45) },
+      { id: newId(), name: "Amlodipine", patientDescription: "降血压的药，早上吃", reportedAt: daysAgoIso(45) },
+    ],
+    relevantHistory: ["高血压，大约十年前确诊"],
+    accessGrants: [
+      {
+        id: newId(),
+        providerName: "Dr. Linda Huang",
+        clinicName: "San Gabriel Valley Nephrology",
+        status: "active",
+        requestedAt: daysAgoIso(145),
+        respondedAt: daysAgoIso(144),
+        scope: "all",
+      },
+    ],
   };
 
   const mariaVisit: VisitEntry = {
@@ -210,5 +242,55 @@ export function buildSeedData(): { profiles: PatientProfile[]; visits: VisitEntr
   };
   jamesVisit.outputs.patientRecap = generatePatientRecap(jamesVisit, james, "en");
 
-  return { profiles: [maria, james, carlos], visits: [mariaVisit, jamesVisit] };
+  const weiVisit: VisitEntry = {
+    id: "seed-visit-wei-1",
+    patientProfileId: weiId,
+    createdAt: daysAgoIso(8),
+    completedAt: daysAgoIso(8),
+    status: "completed",
+    languageUsed: "zh",
+    intendedProvider: { clinicName: "San Gabriel Valley Nephrology", providerName: "Dr. Linda Huang" },
+    reasonForVisit: f("最近做透析的时候腿老是抽筋，而且有点喘不上气。", "zh"),
+    symptoms: [
+      {
+        id: newId(),
+        category: "cramping",
+        description: f("透析快结束的时候，两条腿会突然抽筋，很疼。", "zh"),
+        onset: f("大概两个星期前开始的。", "zh"),
+        location: f("主要是小腿，有时候脚也会抽筋。", "zh"),
+        severityInPatientsWords: f("疼得我没办法动，要等一会儿才能缓过来。", "zh"),
+        duration: f("每次透析快结束的时候都会有，持续几分钟。", "zh"),
+        whatMakesItBetter: f("护士帮忙按摩一下会好一点。", "zh"),
+        whatMakesItWorse: f("如果那天喝水喝多了，好像会更容易抽筋。", "zh"),
+        whatHasBeenTried: f("还没有试过什么办法。", "zh"),
+      },
+      {
+        id: newId(),
+        category: "shortness_of_breath",
+        description: f("走路走快一点，或者上楼梯的时候会喘不上气。", "zh"),
+        onset: f("大概一个星期左右。", "zh"),
+        location: null,
+        severityInPatientsWords: f("走两层楼梯就要停下来喘气。", "zh"),
+        duration: f("活动的时候才会这样，坐着休息就没事。", "zh"),
+        whatMakesItBetter: f("坐下来休息一会儿就好了。", "zh"),
+        whatMakesItWorse: f("爬楼梯或者走得比较快的时候。", "zh"),
+        whatHasBeenTried: null,
+      },
+    ],
+    dialysisContext: {
+      recentWeightChange: f("这周体重比平时多了大概两三磅。", "zh"),
+      fluidDietAdherence: f("最近天热，喝水比平时多了一些，没有控制得很好。", "zh"),
+      feelingOnDialysisDays: f("透析当天会比较累，抽筋也是那天发生的。", "zh"),
+      feelingOffDialysisDays: f("不透析的日子精神好一些，但走路还是会喘。", "zh"),
+      missedOrShortenedSessions: f("没有错过，每次都按时去。", "zh"),
+    },
+    medicationNotes: [f("药物没有变化，还是跟以前一样。", "zh")],
+    relevantHistoryNotes: [],
+    biggestConcern: f("我担心喘不上气是不是心脏出了什么问题，因为抽筋已经很难受了。", "zh"),
+    conversation: [],
+    outputs: { clinicianSummaryGeneratedAt: daysAgoIso(8), patientRecap: null },
+  };
+  weiVisit.outputs.patientRecap = generatePatientRecap(weiVisit, wei, "zh");
+
+  return { profiles: [maria, james, wei, carlos], visits: [mariaVisit, jamesVisit, weiVisit] };
 }

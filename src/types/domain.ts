@@ -19,7 +19,7 @@
  * it instead of adding it.
  */
 
-export type LanguageCode = "en" | "es";
+export type LanguageCode = "en" | "es" | "zh";
 
 export type DialysisModality = "hemodialysis" | "peritoneal_dialysis" | "not_on_dialysis" | "unknown";
 

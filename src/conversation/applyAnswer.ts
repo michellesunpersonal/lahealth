@@ -8,6 +8,12 @@ import type {
 import { newId, nowIso } from "../lib/id";
 import { SYMPTOM_CATEGORY_OPTIONS, type StepDef } from "./flow";
 
+const SKIPPED_LABEL: Record<LanguageCode, string> = {
+  en: "(skipped)",
+  es: "(omitido)",
+  zh: "（已跳过）",
+};
+
 function makeField(text: string, lang: LanguageCode): FieldWithQuote {
   const trimmed = text.trim();
   // v1 has no translation engine: "structured" is a light normalization of
@@ -63,7 +69,7 @@ export function applyAnswer(
     id: newId(),
     stepId: step.id,
     questionTextShown: step.prompt[lang],
-    answerVerbatim: wasSkipped ? (lang === "es" ? "(omitido)" : "(skipped)") : displayText,
+    answerVerbatim: wasSkipped ? SKIPPED_LABEL[lang] : displayText,
     answeredAt: nowIso(),
   };
 

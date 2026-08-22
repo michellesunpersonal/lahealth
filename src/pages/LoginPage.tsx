@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { store } from "../data/storage";
 import { useSession } from "../data/SessionContext";
-import { strings, t } from "../i18n/strings";
+import { LANGUAGE_NAMES, strings, t } from "../i18n/strings";
 import type { LanguageCode, PatientProfile } from "../types/domain";
 import { newId, nowIso } from "../lib/id";
 
@@ -60,6 +60,12 @@ export default function LoginPage() {
           >
             ES
           </button>
+          <button
+            className={`px-2 py-1 rounded ${uiLang === "zh" ? "bg-slate-900 text-white" : "text-slate-500"}`}
+            onClick={() => setUiLang("zh")}
+          >
+            中文
+          </button>
         </div>
 
         <h1 className="text-2xl font-semibold text-slate-900">{t(strings.login.title, uiLang)}</h1>
@@ -78,7 +84,7 @@ export default function LoginPage() {
               >
                 <div className="font-medium text-slate-900">{p.displayName}</div>
                 <div className="text-xs text-slate-500">
-                  {p.preferredLanguage === "es" ? "Español" : "English"} · {p.dialysis.modality.replace(/_/g, " ")}
+                  {LANGUAGE_NAMES[p.preferredLanguage]} · {p.dialysis.modality.replace(/_/g, " ")}
                 </div>
               </button>
             ))}
@@ -128,6 +134,7 @@ export default function LoginPage() {
               >
                 <option value="es">Español</option>
                 <option value="en">English</option>
+                <option value="zh">中文</option>
               </select>
             </div>
             <button
