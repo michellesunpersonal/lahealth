@@ -5,9 +5,24 @@ import { store } from "../data/storage";
 import { strings, t } from "../i18n/strings";
 import type { LanguageCode } from "../types/domain";
 import { createBlankVisit } from "../data/blank";
+import { approveGrant, denyGrant, requestAccess, revokeGrant } from "../data/accessGrants";
+
+const STATUS_LABEL_KEY = {
+  pending: "statusPending",
+  active: "statusActive",
+  revoked: "statusRevoked",
+  denied: "statusDenied",
+} as const;
+
+const STATUS_BADGE_CLASS = {
+  pending: "bg-amber-100 text-amber-700",
+  active: "bg-emerald-100 text-emerald-700",
+  revoked: "bg-slate-100 text-slate-500",
+  denied: "bg-slate-100 text-slate-500",
+} as const;
 
 export default function DashboardPage() {
-  const { profile, logOut } = useSession();
+  const { profile, logOut, refreshProfile } = useSession();
   const navigate = useNavigate();
 
   const lang: LanguageCode = profile?.preferredLanguage ?? "en";
@@ -17,6 +32,10 @@ export default function DashboardPage() {
   const [clinicName, setClinicName] = useState(profile?.accessGrants[0]?.clinicName ?? "");
   const [visitLang, setVisitLang] = useState<LanguageCode>(lang);
 
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [reqClinicName, setReqClinicName] = useState("");
+  const [reqProviderName, setReqProviderName] = useState("");
+
   if (!profile) return null;
   const currentProfile = profile;
 
@@ -24,6 +43,30 @@ export default function DashboardPage() {
     const visit = createBlankVisit(currentProfile.id, clinicName, visitLang);
     store.saveVisit(visit);
     navigate(`/intake/${visit.id}`);
+  }
+
+  function handleApprove(grantId: string) {
+    store.saveProfile(approveGrant(currentProfile, grantId));
+    refreshProfile();
+  }
+
+  function handleDeny(grantId: string) {
+    store.saveProfile(denyGrant(currentProfile, grantId));
+    refreshProfile();
+  }
+
+  function handleRevoke(grantId: string) {
+    store.saveProfile(revokeGrant(currentProfile, grantId));
+    refreshProfile();
+  }
+
+  function handleSubmitRequest() {
+    if (!reqClinicName.trim()) return;
+    store.saveProfile(requestAccess(currentProfile, reqClinicName, reqProviderName));
+    refreshProfile();
+    setReqClinicName("");
+    setReqProviderName("");
+    setShowRequestForm(false);
   }
 
   return (
@@ -70,30 +113,81 @@ export default function DashboardPage() {
         <section className="bg-white rounded-2xl border border-slate-200 p-6">
           <h2 className="text-sm font-medium text-slate-500 mb-3">{t(strings.dashboard.accessGrantsTitle, lang)}</h2>
           {profile.accessGrants.length === 0 ? (
-            <p className="text-sm text-slate-400">—</p>
+            <p className="text-sm text-slate-400">{t(strings.dashboard.noAccessGrants, lang)}</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {profile.accessGrants.map((g) => (
-                <li key={g.id} className="flex items-center justify-between text-sm">
-                  <div>
-                    <div className="text-slate-800">{g.clinicName}</div>
-                    <div className="text-xs text-slate-400">{g.providerName}</div>
+                <li key={g.id} className="flex items-center justify-between text-sm gap-3">
+                  <div className="min-w-0">
+                    <div className="text-slate-800 truncate">{g.clinicName}</div>
+                    <div className="text-xs text-slate-400 truncate">{g.providerName}</div>
                   </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      g.status === "active"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : g.status === "pending"
-                          ? "bg-amber-100 text-amber-700"
-                          : "bg-slate-100 text-slate-500"
-                    }`}
-                  >
-                    {g.status}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {g.status === "pending" && (
+                      <>
+                        <button
+                          onClick={() => handleApprove(g.id)}
+                          className="text-xs px-2.5 py-1 rounded-full bg-teal-600 text-white font-medium hover:bg-teal-700"
+                        >
+                          {t(strings.dashboard.approve, lang)}
+                        </button>
+                        <button
+                          onClick={() => handleDeny(g.id)}
+                          className="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50"
+                        >
+                          {t(strings.dashboard.deny, lang)}
+                        </button>
+                      </>
+                    )}
+                    {g.status === "active" && (
+                      <button
+                        onClick={() => handleRevoke(g.id)}
+                        className="text-xs px-2.5 py-1 rounded-full border border-red-200 text-red-600 hover:bg-red-50"
+                      >
+                        {t(strings.dashboard.revoke, lang)}
+                      </button>
+                    )}
+                    <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${STATUS_BADGE_CLASS[g.status]}`}>
+                      {t(strings.dashboard[STATUS_LABEL_KEY[g.status]], lang)}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
+
+          <div className="mt-4 pt-4 border-t border-slate-100">
+            {!showRequestForm ? (
+              <button
+                onClick={() => setShowRequestForm(true)}
+                className="text-xs text-slate-400 hover:text-slate-600 underline decoration-dotted"
+              >
+                {t(strings.dashboard.requestAccessDemo, lang)}
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-slate-400">{t(strings.dashboard.requestAccessNote, lang)}</p>
+                <input
+                  value={reqClinicName}
+                  onChange={(e) => setReqClinicName(e.target.value)}
+                  placeholder={t(strings.dashboard.clinicNameLabel, lang)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                />
+                <input
+                  value={reqProviderName}
+                  onChange={(e) => setReqProviderName(e.target.value)}
+                  placeholder={t(strings.dashboard.providerNameLabel, lang)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                />
+                <button
+                  onClick={handleSubmitRequest}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 text-white text-sm font-medium hover:bg-slate-900"
+                >
+                  {t(strings.dashboard.submitRequest, lang)}
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="bg-white rounded-2xl border border-slate-200 p-6">

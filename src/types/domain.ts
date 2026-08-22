@@ -78,6 +78,7 @@ export interface ProviderAccessGrant {
   clinicName: string;
   status: AccessGrantStatus;
   requestedAt: string;
+  /** Timestamp of the most recent patient action on this grant (approve, deny, or revoke) — not only the original response. */
   respondedAt: string | null;
   /** Which visit entries this grant covers. "all" = full history; otherwise a specific set of visit IDs. */
   scope: "all" | string[];
