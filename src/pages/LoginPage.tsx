@@ -47,6 +47,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <div className="flex justify-between items-center mb-4 text-sm">
+          <a href="/consent" className="text-slate-400 hover:text-slate-600">
+            Consent translator prototype →
+          </a>
+        </div>
         <div className="flex justify-end gap-2 mb-4 text-sm">
           <button
             className={`px-2 py-1 rounded ${uiLang === "en" ? "bg-slate-900 text-white" : "text-slate-500"}`}

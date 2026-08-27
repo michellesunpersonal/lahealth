@@ -1,4 +1,12 @@
-# LA Health — Pre-Visit Symptom Capture (Prototype)
+# LA Health (Prototypes)
+
+This repo holds two independent language-access prototypes sharing a stack
+(React + Tailwind + Vite) and a `localStorage`-only data layer. They don't
+share data or routes beyond a couple of cross-links: the symptom capture
+tool below at `/login`, and the [Medical Consent Translator](#medical-consent-translator-prototype-consent)
+at `/consent`.
+
+## Pre-Visit Symptom Capture
 
 A pre-visit symptom-and-history capture tool for limited-English-proficiency
 (LEP) dialysis/ESRD patients. Patients describe what's happening through a
@@ -62,3 +70,49 @@ flow from scratch).
 - **Access grants are display-only.** The `ProviderAccessGrant` shape
   supports patient-driven approve/revoke, but there's no UI to act on a
   pending request yet.
+
+## Medical Consent Translator (prototype, `/consent`)
+
+A second, separate prototype in this repo: a context-aware translator for
+informed consent / pre-op briefing documents, targeting Mandarin. It exists
+to test one hypothesis — that a translation informed by a patient's
+accumulated care-journey context produces better comprehension than a
+one-shot literal translation alone, not just faster or cheaper translation.
+
+For each document it generates, side by side:
+
+1. A **literal translation** (the control/baseline) — generated from the
+   source text only.
+2. A **context-adapted translation** — health-literacy adjusted and
+   culturally framed, informed by that patient's logged timeline (prior
+   appointment notes, concerns, literacy signals). Adaptation changes *how*
+   something is said, never *what* is disclosed — every risk/fact in the
+   source must still appear.
+3. **Teach-back questions** in the target language, to verify actual
+   comprehension rather than that the text was read — each one can be
+   marked understood/misunderstood after being tried with a real patient or
+   reviewer.
+
+It also includes a **blind reviewer mode**: the two translations are shown
+as unlabeled "Version A" / "Version B" (order randomized per document) so a
+Mandarin-speaking reviewer can pick which one they'd understand better as a
+patient before being told which is which — this is the tool's actual
+success metric, not a nice-to-have.
+
+**Data handling.** This is a personal validation tool, not a covered
+product: Claude via the standard Anthropic API is **not** covered by a
+signed HIPAA Business Associate Agreement. Only use de-identified or
+reconstructed content — never real, identifiable consent forms or chart
+data — until a BAA is in place. There is no backend; a document's source
+text and generated translations go straight from your browser to the
+Anthropic API using an API key you supply (stored only in this browser's
+localStorage) and are otherwise stored only in localStorage alongside
+everything else in this app.
+
+**Positioning.** This tool is built to augment scarce interpreter/CHW
+capacity, not replace a qualified medical interpreter — keep that framing
+in any user-facing copy.
+
+**Out of scope for this prototype:** live real-time voice interpretation,
+live Epic/MyChart FHIR integration, and an interpreter/CHW review workflow.
+The timeline is a manually-entered log, not a live EHR feed.
