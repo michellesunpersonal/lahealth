@@ -4,6 +4,8 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import IntakePage from "./pages/IntakePage";
 import SummaryPage from "./pages/SummaryPage";
+import ConsentHomePage from "./pages/ConsentHomePage";
+import ConsentCasePage from "./pages/ConsentCasePage";
 
 function RequireSession({ children }: { children: React.ReactNode }) {
   const { profile } = useSession();
@@ -41,6 +43,8 @@ export default function App() {
               </RequireSession>
             }
           />
+          <Route path="/consent" element={<ConsentHomePage />} />
+          <Route path="/consent/:caseId" element={<ConsentCasePage />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
