@@ -3,8 +3,8 @@ import { SessionProvider, useSession } from "./data/SessionContext";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import IntakePage from "./pages/IntakePage";
-import SummaryPage from "./pages/SummaryPage";
-import ConsentHomePage from "./pages/ConsentHomePage";
+import VisitBriefingPage from "./pages/VisitBriefingPage";
+import AfterVisitPage from "./pages/AfterVisitPage";
 import ConsentCasePage from "./pages/ConsentCasePage";
 
 function RequireSession({ children }: { children: React.ReactNode }) {
@@ -28,7 +28,7 @@ export default function App() {
             }
           />
           <Route
-            path="/intake/:visitId"
+            path="/visit/:visitId/check-in"
             element={
               <RequireSession>
                 <IntakePage />
@@ -36,15 +36,29 @@ export default function App() {
             }
           />
           <Route
-            path="/visit/:visitId"
+            path="/visit/:visitId/briefing"
             element={
               <RequireSession>
-                <SummaryPage />
+                <VisitBriefingPage />
               </RequireSession>
             }
           />
-          <Route path="/consent" element={<ConsentHomePage />} />
-          <Route path="/consent/:caseId" element={<ConsentCasePage />} />
+          <Route
+            path="/visit/:visitId/after"
+            element={
+              <RequireSession>
+                <AfterVisitPage />
+              </RequireSession>
+            }
+          />
+          <Route
+            path="/visit/:visitId/consent/:caseId"
+            element={
+              <RequireSession>
+                <ConsentCasePage />
+              </RequireSession>
+            }
+          />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>

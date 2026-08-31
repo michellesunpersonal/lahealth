@@ -7,7 +7,6 @@ import type { ConsentCase } from "../types/consent";
  * data model.
  */
 const CASES_KEY = "lahealth.consent.cases";
-const API_KEY_KEY = "lahealth.consent.apiKey";
 
 function readMap<T>(key: string): Record<string, T> {
   const raw = localStorage.getItem(key);
@@ -42,15 +41,5 @@ export const consentStore = {
     const all = readMap<ConsentCase>(CASES_KEY);
     delete all[id];
     writeMap(CASES_KEY, all);
-  },
-
-  /** API key is stored locally only, never sent anywhere but directly to the Anthropic API from this browser. */
-  getApiKey(): string {
-    return localStorage.getItem(API_KEY_KEY) ?? "";
-  },
-
-  setApiKey(key: string): void {
-    if (key) localStorage.setItem(API_KEY_KEY, key);
-    else localStorage.removeItem(API_KEY_KEY);
   },
 };

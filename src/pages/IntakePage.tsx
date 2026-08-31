@@ -73,7 +73,7 @@ export default function IntakePage() {
             <div className="text-2xl mb-2">✓</div>
             <div className="font-medium text-slate-800 mb-4">{t(strings.intake.done, lang)}</div>
             <button
-              onClick={() => navigate(`/visit/${visit.id}`)}
+              onClick={() => navigate(`/visit/${visit.id}/briefing`)}
               className="px-4 py-2.5 rounded-lg bg-teal-600 text-white text-sm font-medium hover:bg-teal-700"
             >
               {t(strings.intake.seeOutputs, lang)}
