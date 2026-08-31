@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { consentStore } from "../data/consentStorage";
+import { settingsStore } from "../data/settingsStorage";
 import { generateTranslation, TranslationClientError } from "../consent/translateClient";
 import type { ConsentCase, ConsentDocument, TimelineEntry } from "../types/consent";
 import { newId, nowIso } from "../lib/id";
 import TranslationResultView from "../components/TranslationResultView";
 
 export default function ConsentCasePage() {
-  const { caseId } = useParams<{ caseId: string }>();
+  const { visitId, caseId } = useParams<{ visitId: string; caseId: string }>();
   const [, forceRender] = useState(0);
   const consentCase = caseId ? consentStore.getCase(caseId) : null;
   const [generatingDocId, setGeneratingDocId] = useState<string | null>(null);
@@ -22,11 +23,13 @@ export default function ConsentCasePage() {
   const [docLabel, setDocLabel] = useState("");
   const [docText, setDocText] = useState("");
 
+  const briefingHref = visitId ? `/visit/${visitId}/briefing` : "/dashboard";
+
   if (!consentCase) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-slate-400 text-sm">
-          Case not found. <Link to="/consent" className="text-indigo-600 hover:underline">Back to cases</Link>
+          Case not found. <Link to={briefingHref} className="text-indigo-600 hover:underline">Back to visit briefing</Link>
         </div>
       </div>
     );
@@ -84,7 +87,7 @@ export default function ConsentCasePage() {
     setError(null);
     setGeneratingDocId(doc.id);
     try {
-      const apiKey = consentStore.getApiKey();
+      const apiKey = settingsStore.getApiKey();
       const translation = await generateTranslation(currentCase, doc, apiKey);
       updateDocument({ ...doc, translation });
     } catch (err) {
@@ -100,8 +103,8 @@ export default function ConsentCasePage() {
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200">
         <div className="max-w-3xl mx-auto px-4 py-4">
-          <Link to="/consent" className="text-xs text-slate-400 hover:text-slate-600">
-            ← All cases
+          <Link to={briefingHref} className="text-xs text-slate-400 hover:text-slate-600">
+            ← Back to visit briefing
           </Link>
           <div className="font-semibold text-slate-900 truncate">{currentCase.title}</div>
           <div className="text-xs text-slate-500">{currentCase.procedureName}</div>

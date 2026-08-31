@@ -2,10 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSession } from "../data/SessionContext";
 import { store } from "../data/storage";
+import { consentStore } from "../data/consentStorage";
+import { briefingStore } from "../data/briefingStorage";
 import { strings, t } from "../i18n/strings";
 import type { LanguageCode } from "../types/domain";
 import { createBlankVisit } from "../data/blank";
 import { approveGrant, denyGrant, requestAccess, revokeGrant } from "../data/accessGrants";
+import ApiKeySettings from "../components/ApiKeySettings";
+import { nowIso } from "../lib/id";
 
 const STATUS_LABEL_KEY = {
   pending: "statusPending",
@@ -36,13 +40,26 @@ export default function DashboardPage() {
   const [reqClinicName, setReqClinicName] = useState("");
   const [reqProviderName, setReqProviderName] = useState("");
 
+  const [, forceRender] = useState(0);
+  const [linkPickerVisitId, setLinkPickerVisitId] = useState<Record<string, string>>({});
+
   if (!profile) return null;
   const currentProfile = profile;
+
+  const linkedCaseIds = new Set(briefingStore.getAllConsentLinks().map((l) => l.consentCaseId));
+  const unlinkedCases = consentStore.getAllCases().filter((c) => !linkedCaseIds.has(c.id));
 
   function startVisit() {
     const visit = createBlankVisit(currentProfile.id, clinicName, visitLang);
     store.saveVisit(visit);
-    navigate(`/intake/${visit.id}`);
+    navigate(`/visit/${visit.id}/check-in`);
+  }
+
+  function linkCaseToVisit(consentCaseId: string) {
+    const visitId = linkPickerVisitId[consentCaseId];
+    if (!visitId) return;
+    briefingStore.saveConsentLink({ visitId, consentCaseId, linkedAt: nowIso() });
+    forceRender((n) => n + 1);
   }
 
   function handleApprove(grantId: string) {
@@ -237,37 +254,76 @@ export default function DashboardPage() {
             <p className="text-sm text-slate-400">{t(strings.dashboard.noPastVisits, lang)}</p>
           ) : (
             <ul className="space-y-2">
-              {visits.map((v) => (
-                <li
-                  key={v.id}
-                  className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between"
-                >
-                  <div>
-                    <div className="text-sm font-medium text-slate-800">{v.intendedProvider.clinicName}</div>
-                    <div className="text-xs text-slate-400">{new Date(v.createdAt).toLocaleDateString()}</div>
+              {visits.map((v) => {
+                const hasBriefing = v.status === "completed" && !!briefingStore.getBriefingForVisit(v.id);
+                const phaseLabel = v.status === "in_progress" ? "Check-in in progress" : hasBriefing ? "Reviewed" : "Briefing ready";
+                const phaseClass =
+                  v.status === "in_progress"
+                    ? "bg-amber-100 text-amber-700"
+                    : hasBriefing
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-teal-100 text-teal-700";
+                const href = v.status === "completed" ? `/visit/${v.id}/briefing` : `/visit/${v.id}/check-in`;
+                return (
+                  <li key={v.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-slate-800">{v.intendedProvider.clinicName}</div>
+                      <div className="text-xs text-slate-400">{new Date(v.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs px-2 py-1 rounded-full ${phaseClass}`}>{phaseLabel}</span>
+                      <button onClick={() => navigate(href)} className="text-sm text-teal-700 font-medium hover:underline">
+                        {v.status === "completed" ? "View briefing" : t(strings.dashboard.continueVisit, lang)}
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        {unlinkedCases.length > 0 && (
+          <section className="bg-white rounded-2xl border border-slate-200 p-6">
+            <h2 className="text-sm font-medium text-slate-500 mb-1">Unlinked consent cases</h2>
+            <p className="text-xs text-slate-500 mb-3">
+              These consent cases aren't attached to a visit yet — link one to see it on that visit's briefing.
+            </p>
+            <ul className="space-y-2">
+              {unlinkedCases.map((c) => (
+                <li key={c.id} className="flex items-center justify-between gap-3 text-sm">
+                  <div className="min-w-0">
+                    <div className="text-slate-800 truncate">{c.title}</div>
+                    <div className="text-xs text-slate-400 truncate">{c.procedureName}</div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        v.status === "completed" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                      }`}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <select
+                      value={linkPickerVisitId[c.id] ?? ""}
+                      onChange={(e) => setLinkPickerVisitId((m) => ({ ...m, [c.id]: e.target.value }))}
+                      className="px-2 py-1.5 rounded-lg border border-slate-300 text-xs"
                     >
-                      {v.status === "completed" ? t(strings.dashboard.completed, lang) : t(strings.dashboard.inProgress, lang)}
-                    </span>
+                      <option value="">Link to visit…</option>
+                      {visits.map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.intendedProvider.clinicName} — {new Date(v.createdAt).toLocaleDateString()}
+                        </option>
+                      ))}
+                    </select>
                     <button
-                      onClick={() => navigate(v.status === "completed" ? `/visit/${v.id}` : `/intake/${v.id}`)}
-                      className="text-sm text-teal-700 font-medium hover:underline"
+                      onClick={() => linkCaseToVisit(c.id)}
+                      disabled={!linkPickerVisitId[c.id]}
+                      className="text-xs px-2.5 py-1 rounded-full border border-teal-300 text-teal-700 hover:bg-teal-50 disabled:opacity-40"
                     >
-                      {v.status === "completed"
-                        ? t(strings.dashboard.viewSummary, lang)
-                        : t(strings.dashboard.continueVisit, lang)}
+                      Link
                     </button>
                   </div>
                 </li>
               ))}
             </ul>
-          )}
-        </section>
+          </section>
+        )}
+
+        <ApiKeySettings />
       </main>
     </div>
   );

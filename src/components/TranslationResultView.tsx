@@ -1,20 +1,7 @@
 import { useState } from "react";
-import type { ConsentDocument, TeachBackOutcome, TeachBackQuestion } from "../types/consent";
+import type { ConsentDocument, TeachBackQuestion } from "../types/consent";
 import { nowIso } from "../lib/id";
-
-const OUTCOME_LABEL: Record<TeachBackOutcome, string> = {
-  not_yet_tried: "Not yet tried",
-  understood: "Understood",
-  partially_understood: "Partially understood",
-  misunderstood: "Misunderstood",
-};
-
-const OUTCOME_BADGE_CLASS: Record<TeachBackOutcome, string> = {
-  not_yet_tried: "bg-slate-100 text-slate-500",
-  understood: "bg-emerald-100 text-emerald-700",
-  partially_understood: "bg-amber-100 text-amber-700",
-  misunderstood: "bg-red-100 text-red-700",
-};
+import TeachBackOutcomeButtons from "./TeachBackOutcomeButtons";
 
 interface Props {
   document: ConsentDocument;
@@ -169,19 +156,7 @@ export default function TranslationResultView({ document, onUpdate }: Props) {
               <div className="text-xs text-slate-500 mt-1.5">
                 <span className="font-medium">A good answer covers:</span> {q.whatAGoodAnswerCovers}
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {(Object.keys(OUTCOME_LABEL) as TeachBackOutcome[]).map((o) => (
-                  <button
-                    key={o}
-                    onClick={() => updateTeachBack(q.id, { outcome: o })}
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      q.outcome === o ? OUTCOME_BADGE_CLASS[o] : "bg-slate-50 text-slate-400 hover:bg-slate-100"
-                    }`}
-                  >
-                    {OUTCOME_LABEL[o]}
-                  </button>
-                ))}
-              </div>
+              <TeachBackOutcomeButtons value={q.outcome} onChange={(outcome) => updateTeachBack(q.id, { outcome })} />
               <input
                 value={q.outcomeNotes}
                 onChange={(e) => updateTeachBack(q.id, { outcomeNotes: e.target.value })}
